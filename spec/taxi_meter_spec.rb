@@ -93,7 +93,7 @@ end
       @meter.start
     end
 
-    xit "has a minimum fare of $13.10" do
+    it "has a minimum fare of $13.10" do
       @meter.amount_due=1.0/6
       expect(@meter.amount_due).to eq(13.10)
     end

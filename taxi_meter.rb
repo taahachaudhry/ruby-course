@@ -30,5 +30,8 @@ class TaxiMeter
     else miles_driven > 1.0/6.0
       @amount_due = 2.10 + ((miles_driven*6).ceil*0.40)
     end
+    if @airport==true && @amount_due < 13.10
+      @amount_due=13.10
+    end
   end
 end
