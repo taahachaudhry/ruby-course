@@ -8,7 +8,7 @@ class TaxiMeter
     @miles_driven = 0
     @start_time = nil
     @stop_time = nil
-    @airport=airport
+    @airport = airport
   end
 
   def start
@@ -20,18 +20,24 @@ class TaxiMeter
   end
 
   attr_reader :amount_due
-  def amount_due=(miles_driven)
-    if miles_driven==0
+  def amount_due
+    if @miles_driven==0
       @miles_driven = 0
       @amount_due = 0
-    elsif miles_driven <= 1.0/6.0
+    elsif @miles_driven <= 1.0/6.0
       @miles_driven=miles_driven
-      @amount_due=2.50
-    else miles_driven > 1.0/6.0
-      @amount_due = 2.10 + ((miles_driven*6).ceil*0.40)
+      @amount_due=250
+    else @miles_driven > 1.0/6.0
+      @amount_due = ((2.10 + (miles_driven*6).ceil*0.40)*100).round(0)
     end
-    if @airport==true && @amount_due < 13.10
-      @amount_due=13.10
+    @amount_due += (((29.00/60)*(Time.now-@start_time)/60)*100).round(0)
+    if @start_time.hour >= 21 || @start_time.hour < 4
+      @amount_due += 100
     end
+    if @airport==true && @amount_due < 1310
+      @amount_due=1310
+    end
+
+    return @amount_due
   end
 end

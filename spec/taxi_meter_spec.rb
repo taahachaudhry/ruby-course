@@ -13,7 +13,7 @@ describe TaxiMeter do
     end
 
     it "starts at zero" do
-      @meter.amount_due = 0
+      @amount_due = 0
       @meter.miles_driven = 0
     end
 
@@ -55,11 +55,12 @@ describe TaxiMeter do
       # Once started, start_time shouldn't rely on the current time
       expect(@meter.stop_time).to eq(stop_time)
     end
-end
+  end
+
   context "The taxi meter starts" do
     before do
       # We want to freeze time to the point when the meter starts
-      @start_time = Time.now
+      @start_time = Time.parse('3 pm')
       Time.stub(:now).and_return(@start_time)
 
       @meter = TaxiMeter.new
@@ -67,23 +68,52 @@ end
     end
 
     it "charges $2.50 for the first 1/6 mile (recorded in cents)" do
-      @meter.amount_due=1.0/6
-      expect(@meter.amount_due).to eq(2.50)
+      @meter.miles_driven = 1.0/6
+      expect(@meter.amount_due).to eq(250)
     end
 
     it "charges $2.40 per mile, plus the initial 1/6th cost" do
-      @meter.amount_due=1.0+(1.0/6)
-      expect(@meter.amount_due).to eq(4.90)
+      @meter.miles_driven=1.0+(1.0/6)
+      expect(@meter.amount_due).to eq(490)
     end
 
-    xit "charges $29.00 an hour prorated by minute" do
+    it "charges $29.00 an hour prorated by minute" do
+      @start_time = Time.now
       Time.stub(:now).and_return(@meter.start_time + 60 * 60)
-      expect(@meter.amount_due).to eq(29.00)
+      expect(@meter.amount_due).to eq(2900)
+    end
+    it "charges $29.00 an hour prorated by minute- drove 15 min" do
+      @start_time = Time.now
+      Time.stub(:now).and_return(@meter.start_time + 15 * 60)
+      expect(@meter.amount_due).to eq(725)
+    end
+     it "charges $29.00 an hour prorated by minute-drove 15 min and 2 1/6 miles" do
+      @meter.miles_driven=1.0+(1.0/6)
+      @start_time = Time.now
+      Time.stub(:now).and_return(@meter.start_time + 15 * 60)
+      expect(@meter.amount_due).to eq(1215)
     end
   end
 
+  context "Checking amount due after stop_time has been set" do
+    before do
 
-  context "The taxi meter starts from ABIA", pending =>true do
+      @meter = TaxiMeter.new
+      @meter.start
+
+      # We want to freeze time to the point when the meter starts
+      @meter.miles_driven=(1.0/6)
+      @meter.start_time = Time.new(2014, 2, 1, 11, 0, 0)
+      @meter.stop_time = Time.new(2014, 2, 1, 12, 0, 0)
+      Time.stub(:now).and_return(@meter.start_time + 60*60) #Sets current time past stop time
+
+    end
+
+    it "Charges $31.50 for a 1 hour wait time, plus drove 1/6th a mile (showed up late to the cab and traffic)" do
+      expect(@meter.amount_due).to eq(3150)
+    end
+  end
+  context "The taxi meter starts from ABIA" do
     before do
       # We want to freeze time to the point when the meter starts
       start_time = Time.now
@@ -94,9 +124,49 @@ end
     end
 
     it "has a minimum fare of $13.10" do
-      @meter.amount_due=1.0/6
-      expect(@meter.amount_due).to eq(13.10)
+      @meter.miles_driven=1.0/6
+      expect(@meter.amount_due).to eq(1310)
     end
   end
 
+  context "Drunk tax is in effect late night" do
+    before do
+      @start_time = Time.parse('9 pm')
+      Time.stub(:now).and_return(@start_time)
+
+      @meter = TaxiMeter.new
+      @meter.start
+    end
+
+    it "charges $8.25 for a 15 min wait time, no distance so far" do
+      Time.stub(:now).and_return(@meter.start_time + 15 * 60)
+      expect(@meter.amount_due).to eq(825)
+    end
+
+    it "charges $24.83 for a 16 min wait time, 5.7 mile trip" do
+      Time.stub(:now).and_return(@meter.start_time + 16 * 60)
+      @meter.miles_driven = 5.7
+      expect(@meter.amount_due).to eq(2483)
+    end
+  end
+  context "Drunk tax is in effect early morning" do
+      before do
+      @start_time = Time.parse('3 am')
+      Time.stub(:now).and_return(@start_time)
+
+      @meter = TaxiMeter.new
+      @meter.start
+    end
+
+    it "charges $8.73 for a 16 min wait time, no distance yet" do
+      Time.stub(:now).and_return(@meter.start_time + 16 * 60)
+      expect(@meter.amount_due).to eq(873)
+    end
+
+    it "charges $24.83 for a 16 min wait time, 5.7 mile trip" do
+      Time.stub(:now).and_return(@meter.start_time + 16 * 60)
+      @meter.miles_driven = 5.7
+      expect(@meter.amount_due).to eq(2483)
+    end
+  end
 end
